@@ -28,23 +28,18 @@ int main(int argc, char *argv[]) {
         else if(childpid==0){
             //parsing the string they input into an array of arguments
             int i = 0;
-            char *p = strtok(inputString, " ");
+            char *p = strtok(inputString, "\n");
+            p = strtok(p, " ");
             char *inputStringArgs[10];
             while (p != NULL){
                 inputStringArgs[i++] = p;
                 p = strtok(NULL, " ");
             }
-            printf ("The arguments are: \n"); //debug
-            //below causes segfault when less than 10 args are given
-            /*for (i = 0; i < 1; i++) {
-                printf("%s, ", inputStringArgs[i]);
-            }*/
-            //checking if they are trying to exit
+            inputStringArgs[i] = 0;
             if (strcmp(inputStringArgs[0], "exit\n") == 0) {
                 printf ("reaches here\n");
                 exit(1);
             }
-            //using exec to run programs
             execvp(inputStringArgs[0], inputStringArgs);
             printf("didnt segfault\n");
         }
