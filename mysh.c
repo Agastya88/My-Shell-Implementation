@@ -36,23 +36,24 @@ int main(int argc, char *argv[]) {
                 p = strtok(NULL, " ");
             }
             inputStringArgs[i] = 0;
-            if (strcmp(inputStringArgs[0], "exit\n") == 0) {
-                printf ("reaches here\n");
+            if (strcmp(inputStringArgs[0], "exit") == 0) {
                 exit(1);
             }
             execvp(inputStringArgs[0], inputStringArgs);
-            printf("didnt segfault\n");
         }
         else{
-            printf ("parent ran at this time in the flow\n"); //debug
             wait(NULL);
         }
     }
 }
 
 void printprompt(){
-    char cwd[PATH_MAX];
-    if(getcwd(cwd, sizeof(cwd)) != NULL){
-        printf("%s$ ", cwd);
-    }
+    //uncomment below to print cwd before $
+    /*
+       char cwd[PATH_MAX];
+       if(getcwd(cwd, sizeof(cwd)) != NULL){
+       printf("%s$ ", cwd);
+       }
+     */
+    printf("$");
 }
