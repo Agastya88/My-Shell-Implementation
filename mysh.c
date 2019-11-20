@@ -21,8 +21,7 @@ int main(int argc, char *argv[]) {
         char *inputString = fgets(uinput, INPUT_MAX, stdin);
         childpid = fork();
         if(childpid==-1){
-            perror(childpid);
-            //printf("Failure: couldn't fork child");
+            perror("couldn't fork child");
             exit (0);
         }
         else if(childpid==0){
@@ -42,7 +41,10 @@ int main(int argc, char *argv[]) {
             execvp(inputStringArgs[0], inputStringArgs);
         }
         else{
-            wait(NULL);
+            wait(&childpid);
+            if (WIFEXITED(childpid)){
+                exit(1);
+            }
         }
     }
 }
