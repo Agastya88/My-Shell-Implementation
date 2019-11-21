@@ -68,7 +68,6 @@ int main(int argc, char *argv[]) {
         else{
             wait(&childpid);
             if (WIFEXITED(childpid)){
-                //TODO: memset (inputStringArgs, '\0', sizeof(inputStringArgs));
                 continue;
             }
         }
