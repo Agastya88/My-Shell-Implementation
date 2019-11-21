@@ -1,7 +1,12 @@
-shell
----
-by sammy and agastya
+Authors:
+Sammy Van Cleve
+Agastya Ahluwalia
 
-known bugs
-----
-piping, etc. not yet implemented
+Implemented:
+- runs basic programs
+- exit command
+- input redirection
+- output redirection (both versions)
+
+Remaining Tasks:
+- Piping
