@@ -11,7 +11,7 @@
 #define INPUT_MAX 4096
 
 void printprompt();
-void inputRedirection (char* inputFileName);
+void inputRedirection (char *inputFileName);
 void outputRedirection (int outputFile);
 
 int main(int argc, char *argv[]) {
@@ -34,29 +34,29 @@ int main(int argc, char *argv[]) {
             p = strtok(NULL, " ");
             noOfArguments++;
         }
+        //checking for exit
+        if (noOfArguments!=0){
+            if (strcmp (inputStringArgs [0], "exit") == 0){
+                exit (2);
+            }
+        }
         childpid = fork();
         if(childpid==-1){
             perror("couldn't fork child");
             exit (0);
         }
         else if(childpid==0){
-            //checking for exit
-            if (noOfArguments!=0){
-                if (strcmp (inputStringArgs [0], "exit") == 0){
-                    exit (2);
-                }
-            }
+            //checking if there is a call for input redirection
             if (noOfArguments>=3){
-                //checking if there is a need for input redirection
                 if (strcmp (inputStringArgs [1], "<") == 0){
                     inputRedirection (inputStringArgs[2]);
                 }
-                //checking if there is a need for output redirection (truncated)
+                //checking if there is a call for output redirection (truncated)
                 else if (strcmp (inputStringArgs [1], ">") == 0){
                     int outputFileT = open (inputStringArgs[2], O_WRONLY | O_TRUNC);
                     outputRedirection (outputFileT);
                 }
-                //checking if there is a need for output redirection (appended)
+                //checking if there is a call for output redirection (appended)
                 else if (strcmp (inputStringArgs [1], ">>") == 0){
                     int outputFileA = open (inputStringArgs[2], O_WRONLY | O_APPEND);
                     outputRedirection (outputFileA);
@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
         else{
             wait(&childpid);
             if (WIFEXITED(childpid)){
+                //TODO: memset (inputStringArgs, '\0', sizeof(inputStringArgs));
                 continue;
             }
         }
@@ -85,7 +86,7 @@ void printprompt(){
     printf("$");
 }
 
-void inputRedirection (char* inputFileName){
+void inputRedirection (char *inputFileName){
     int inputFile = open (inputFileName, O_RDONLY);
     //checking for errors during opening
     if (inputFile==-1){
