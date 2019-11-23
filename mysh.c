@@ -21,8 +21,9 @@ int main(int argc, char *argv[]) {
     printf ("Shell ID: %d \n", shellpid);
     while(1){
         printprompt();
-        pid_t childpid; //need to rename this var
+        pid_t newProcessPid;
         char uinput[INPUT_MAX];
+        //taking a string as input from the user
         char *inputString = fgets(uinput, INPUT_MAX, stdin);
         //parsing the string they input into an array of arguments
         int i = 0;
@@ -41,12 +42,15 @@ int main(int argc, char *argv[]) {
                 exit (2);
             }
         }
-        childpid = fork();
-        if(childpid==-1){
+        if (noOfArguments==0){
+            break;
+        }
+        newProcessPid = fork();
+        if(newProcessPid==-1){
             perror("couldn't fork child");
             exit (0);
         }
-        else if(childpid==0){
+        else if(newProcessPid==0){
             int rL = noOfArguments;
             int numberOfPipes = 0;
             //stores where the first redirection lies
@@ -79,15 +83,15 @@ int main(int argc, char *argv[]) {
                 else if (strcmp (inputStringArgs [i], "|") == 0){
                     char *programOneArgs [i];
                     for (int j=0; j<i; j++){
-                        programOneArgs [j] = inputStringArgs [i];
+                        programOneArgs [j] = inputStringArgs [j];
                     }
                     programOneArgs[i] = 0;
-                    int k=10-i;
-                    char *programTwoArgs [k];
-                    for (int j=i; j<k; j++){
-                        programTwoArgs [j] = inputStringArgs [i];
+                    char *programTwoArgs [noOfArguments-i];
+                    int l=0;
+                    for (int j=i+1; j<noOfArguments; j++, l++){
+                        programTwoArgs [l] = inputStringArgs [j];
                     }
-                    programTwoArgs[k] = 0;
+                    programTwoArgs[l] = 0;
                     piping (programOneArgs, programTwoArgs);
                     numberOfPipes++;
                 }
@@ -103,8 +107,9 @@ int main(int argc, char *argv[]) {
             printf ("number of pipes are: %d\n", numberOfPipes);
         }
         else{
-            wait(&childpid);
-            if (WIFEXITED(childpid)){
+            wait(&newProcessPid);
+            if (WIFEXITED(newProcessPid)){
+                memset(inputStringArgs, '\0', sizeof(inputStringArgs));
                 continue;
             }
         }
