@@ -25,6 +25,8 @@ int main(int argc, char *argv[]) {
         char uinput[INPUT_MAX];
         //taking a string as input from the user
         char *inputString = fgets(uinput, INPUT_MAX, stdin);
+        //need to look at how fgets tells you its reached the end of the
+        //file and then leave the loop then
         //parsing the string they input into an array of arguments
         int i = 0;
         char *p = strtok(inputString, "\n");
@@ -42,61 +44,52 @@ int main(int argc, char *argv[]) {
                 exit (2);
             }
         }
+        //skipping to next input if their is no input
         if (noOfArguments==0){
-            break;
+            continue;
         }
-        newProcessPid = fork();
-        if(newProcessPid==-1){
-            perror("couldn't fork child");
-            exit (0);
-        }
-        else if(newProcessPid==0){
-            int rL = noOfArguments;
-            int numberOfPipes = 0;
-            //stores where the first redirection lies
-            for (int i=0; i<noOfArguments; i++){
-                //checking if there is a need for input redirection
-                if (strcmp (inputStringArgs [i], "<") == 0){
-                    inputRedirection (inputStringArgs[i+1]);
-                    if (i<rL){
-                        rL = i;
-                    }
-                }
-                //checking if there is a need for output redirection (truncated)
-                else if (strcmp (inputStringArgs [i], ">") == 0){
-                    int outputFileT = open (inputStringArgs[i+1], O_WRONLY | O_TRUNC);
-                    outputRedirection (outputFileT);
-                    if (i<rL){
-                        rL = i;
-                    }
-                }
-                //checking if there is a need for output redirection (appended)
-                else if (strcmp (inputStringArgs [i], ">>") == 0){
-                    int outputFileA = open (inputStringArgs[i+1], O_WRONLY | O_APPEND);
-                    outputRedirection (outputFileA);
-                    if (i<rL){
-                        rL = i;
-                    }
-                }
-                //checking if there is a call for piping
-                //NOTE: this is only going to work for 1 pipe right now.
-                else if (strcmp (inputStringArgs [i], "|") == 0){
-                    char *programOneArgs [i];
-                    for (int j=0; j<i; j++){
-                        programOneArgs [j] = inputStringArgs [j];
-                    }
-                    programOneArgs[i] = 0;
-                    char *programTwoArgs [noOfArguments-i];
-                    int l=0;
-                    for (int j=i+1; j<noOfArguments; j++, l++){
-                        programTwoArgs [l] = inputStringArgs [j];
-                    }
-                    programTwoArgs[l] = 0;
-                    piping (programOneArgs, programTwoArgs);
-                    numberOfPipes++;
-                }
+        //counting the numberOfPipes
+        int numberOfPipes = 0;
+        for (int i=0; i<noOfArguments; i++){
+            if (strcmp (inputStringArgs [i], "|") == 0){
+                numberOfPipes++;
             }
-            if (numberOfPipes==0){
+        }
+        //handles a single command i.e. commands that do not include piping
+        if (numberOfPipes == 0){
+            newProcessPid = fork();
+            if(newProcessPid==-1){
+                perror("couldn't fork child");
+                exit (0);
+            }
+            else if(newProcessPid==0){
+                int rL = noOfArguments;
+                //stores the location of redirection
+                for (int i=0; i<noOfArguments; i++){
+                    //checking if there is a need for input redirection
+                    if (strcmp (inputStringArgs [i], "<") == 0){
+                        if (i<rL){
+                            rL = i;
+                            inputRedirection (inputStringArgs[i+1]);
+                        }
+                    }
+                    //checking if there is a need for output redirection (truncated)
+                    else if (strcmp (inputStringArgs [i], ">") == 0){
+                        int outputFileT = open (inputStringArgs[i+1], O_WRONLY | O_TRUNC);
+                        if (i<rL){
+                            rL = i;
+                            outputRedirection (outputFileT);
+                        }
+                    }
+                    //checking if there is a need for output redirection (appended)
+                    else if (strcmp (inputStringArgs [i], ">>") == 0){
+                        int outputFileA = open (inputStringArgs[i+1], O_WRONLY | O_APPEND);
+                        if (i<rL){
+                            rL = i;
+                            outputRedirection (outputFileA);
+                        }
+                    }
+                }
                 char *commandArgs [rL];
                 for (int i=0; i<rL; i++){
                     commandArgs [i] = inputStringArgs [i];
@@ -104,26 +97,55 @@ int main(int argc, char *argv[]) {
                 commandArgs[rL] = 0;
                 execvp(commandArgs[0], commandArgs);
             }
-            printf ("number of pipes are: %d\n", numberOfPipes);
-        }
-        else{
-            wait(&newProcessPid);
-            if (WIFEXITED(newProcessPid)){
-                memset(inputStringArgs, '\0', sizeof(inputStringArgs));
-                continue;
+            else{
+                wait (NULL);
+                if (WIFEXITED(newProcessPid)){
+                    //resetting arguments
+                    memset(inputStringArgs, '\0', sizeof(inputStringArgs));
+                    continue;
+                }
             }
         }
+            //to do piping for multiple pipes, I can keep an array
+            //that records the locations of all the pipes in the input
+            //string then I can divide up the calls to pipe using
+            //those divisions; so supposing I have 5 pipes that means
+            //that I would then have 6 commands. I could pipe them in
+            //order using a loop.
+            //handlles the case wherein the number of pipes > 0
+        else{
+            printf ("Number of pipes: %d\n", numberOfPipes);
+            int locationOfPipe;
+            for (int k=0; k<noOfArguments; k++){
+                if (strcmp (inputStringArgs [k], "|") == 0){
+                    locationOfPipe=k;
+                }
+            }
+            //dividing the input command into its two constituents
+            char *programOneArgs [locationOfPipe];
+            for (int j=0; j<locationOfPipe; j++){
+                programOneArgs [j] = inputStringArgs [j];
+            }
+            programOneArgs[locationOfPipe] = 0;
+            char *programTwoArgs [noOfArguments-locationOfPipe];
+            int l=0;
+            for (int j=locationOfPipe+1; j<noOfArguments; j++, l++){
+                programTwoArgs [l] = inputStringArgs [j];
+            }
+            programTwoArgs[l] = 0;
+            piping (programOneArgs, programTwoArgs);
+        }
+        wait (NULL);
+        wait (NULL);
     }
 }
 
 void printprompt(){
-    //uncomment below to print cwd before $
-    /*
-       char cwd[PATH_MAX];
-       if(getcwd(cwd, sizeof(cwd)) != NULL){
-       printf("%s$ ", cwd);
-       }
-     */
+    //puts the current working directory before the $
+    //char cwd[PATH_MAX];
+    /*if(getcwd(cwd, sizeof(cwd)) != NULL){
+        printf("%s$ ", cwd);
+    }*/
     printf("$");
 }
 
@@ -157,23 +179,25 @@ void outputRedirection (int outputFile){
 
 void piping (char *programOne[], char *programTwo[]){
     int fildes[2];
-    int pid;
     pipe (fildes);
-    pid = fork ();
-    //handles the read end of the pipe
-    if (pid == 0){
-        //replace stdin with read end of pipe
-        dup2 (fildes[0], 0);
-        close (fildes[1]);
-        //execute the program
-        execvp (programTwo [0], programTwo);
-    }
-    //handling the write end of the pipe
-    else{
+    //handles the write end of the pipe
+    if (fork () == 0){
+        //close the read end of the pipe
+        close (fildes[0]);
         //replace stdout with write end of pipe
         dup2 (fildes[1], 1);
-        close (fildes[0]);
         //execute the program
         execvp (programOne [0], programOne);
     }
+    //handling the read end of the pipe
+    if (fork () == 0){
+        //close the write end of the pipe
+        close (fildes[1]);
+        //replace stdin with read end of pipe
+        dup2 (fildes[0], 0);
+        //execute the program
+        execvp (programTwo [0], programTwo);
+    }
+    //TO DO: Ask Pete about the order of the above forks & why one way works
+    //and one way does not.
 }
