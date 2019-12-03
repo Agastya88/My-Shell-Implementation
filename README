@@ -7,8 +7,9 @@ Implemented:
 - exit command
 - input redirection
 - output redirection (both versions)
+- single piping
+- multiple piping
 
 Remaining Tasks:
-- Piping
-- Makefile needs to be updated to include clean, etc.
 - Need to do error checking for system calls, functions used, etc.
+- need to make piping work alongside redirections on the ends
