@@ -9,7 +9,7 @@ Implemented:
 - output redirection (both versions)
 - single piping
 - multiple piping
+- piping alongside redirections
 
 Remaining Tasks:
-- Need to do error checking for system calls, functions used, etc.
-- need to make piping work alongside redirections on the ends
+- none according to me

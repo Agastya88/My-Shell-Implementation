@@ -16,7 +16,6 @@ void inputRedirection (char *inputFileName);
 void outputRedirection (int outputFile);
 void singlePiping (char *pipedCommands[]);
 void multiplePiping (char *pipedCommands[], int numberOfPipes);
-void piping (char *pipedCommands[], int numberOfPipes);
 
 int main(int argc, char *argv[]) {
     pid_t shellpid;
@@ -33,8 +32,7 @@ int main(int argc, char *argv[]) {
             exit (2);
         }
         //creating a copy for later usage (during piping section);
-        char *inputStringCopy = malloc(sizeof(inputString));
-        strcpy (inputStringCopy, inputString);
+        char *inputStringCopy = strdup(inputString);
         //parsing the string they input into an array of arguments
         char *p = strtok(inputString, "\n");
         //the first token; tokenized using a space
@@ -62,7 +60,6 @@ int main(int argc, char *argv[]) {
             if (inputString[i] == '|')
                 numberOfPipes++;
         }
-        int noOfProcesses = numberOfPipes+1;
         //handles a single command i.e. commands that do not include piping
         if (numberOfPipes == 0){
             newProcessPid = fork();
@@ -103,7 +100,11 @@ int main(int argc, char *argv[]) {
                     commandArgs [i] = inputStringArgs [i];
                 }
                 commandArgs[rL] = 0;
-                execvp(commandArgs[0], commandArgs);
+                int execRV = execvp(commandArgs[0], commandArgs);
+                if (execRV == -1){
+                    perror ("Error: ");
+                    exit (3);
+                }
             }
             else{
                 wait (NULL);
@@ -127,19 +128,17 @@ int main(int argc, char *argv[]) {
                 q = strtok(NULL, "|");
             }
             multiplePiping (pipedCommands, numberOfPipes);
-        }
-        for (int k=0; k<noOfProcesses; k++){
-            wait (NULL);
+            free (inputStringCopy);
         }
     }
 }
 
 void printprompt(){
     //puts the current working directory before the $
-    //char cwd[PATH_MAX];
-    /*if(getcwd(cwd, sizeof(cwd)) != NULL){
+    char cwd[PATH_MAX];
+    if(getcwd(cwd, sizeof(cwd)) != NULL){
         printf("%s$ ", cwd);
-    }*/
+    }
     printf("$");
 }
 
@@ -148,13 +147,19 @@ void inputRedirection (char *inputFileName){
     //checking for errors during opening
     if (inputFile==-1){
         perror("Error:");
+        exit (2);
     }
     //performing input redirection
-    dup2 (inputFile, 0);
+    int dupRV = dup2 (inputFile, 0);
+    if (dupRV == -1){
+        perror ("Error: ");
+        exit (2);
+    }
     //checking for errors during closing
     int closeRV = close (inputFile);
     if (closeRV==-1){
-        perror("Error:");
+        perror("Error: ");
+        exit (2);
     }
 }
 
@@ -162,54 +167,19 @@ void outputRedirection (int outputFile){
     //checking for errors during opening
     if (outputFile==-1){
         perror("Error:");
+        exit (2);
     }
     //performing output redirection
-    dup2 (outputFile, 1);
+    int dupRV = dup2 (outputFile, 1);
+    if (dupRV == -1){
+        perror ("Error: ");
+        exit (2);
+    }
     //checking for errors during closing
     int closeRV = close (outputFile);
     if (closeRV==-1){
         perror("Error:");
-    }
-}
-
-void singlePiping (char *pipedCommands[]){
-    int fildes[2];
-    pipe (fildes);
-    //getting the arguments for the first program
-    char *p = strtok(pipedCommands[0], "\0");
-    p = strtok(p," ");
-    char *programOne[10];
-    int pOneArgCount = 0;
-    while (p != NULL){
-        programOne[pOneArgCount++] = p;
-        p = strtok(NULL, " ");
-    }
-    //getting the arguments for the second program
-    char *q = strtok(pipedCommands[1], "\0");
-    q = strtok(q," ");
-    char *programTwo[10];
-    int pTwoArgCount = 0;
-    while (q != NULL){
-        programTwo[pTwoArgCount++] = q;
-        q = strtok(NULL, " ");
-    }
-    //handles the write end of the pipe
-    if (fork () == 0){
-        //close the read end of the pipe
-        close (fildes[0]);
-        //replace stdout with write end of pipe
-        dup2 (fildes[1], 1);
-        //execute the program
-        execvp (programOne [0], programOne);
-    }
-    //handling the read end of the pipe
-    if (fork () == 0){
-        //close the write end of the pipe
-        close (fildes[1]);
-        //replace stdin with read end of pipe
-        dup2 (fildes[0], 0);
-        //execute the program
-        execvp (programTwo [0], programTwo);
+        exit (2);
     }
 }
 
@@ -219,44 +189,85 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
     int pipefds[noOfPipeEnds];
     //creating all the necessary pipes in the parent
     for (int i=0; i<numberOfPipes; i++){
-        pipe (pipefds + i*2);
+        int pipeRV = pipe (pipefds + i*2);
+        if (pipeRV == -1){
+            perror ("Error: ");
+            exit (3);
+        }
     }
     //dup-ing and executing for each command
     for (int currentCommand=0; currentCommand<processCount; currentCommand++){
         int pid = fork();
         if (pid== 0){
-            //getting input from previous command (if there is one)
-            if(currentCommand!=0){
-                dup2(pipefds[(currentCommand-1)*2], 0);
-            }
-            //checking for input redirection in the first command
-            else{
-                //loop through the command and look for <
-                //perform ID if it is present
-            }
-            //outputting to next command (if it exists)
-            if (currentCommand!=processCount-1){
-                dup2(pipefds[currentCommand*2+1], 1);
-            }
-            //checking for output redirection in the last command
-            else{
-                //loop through the command and look for > or >>
-                //perform OD if it is presentom
-            }
-            //closing all the pipe ends
-            for (int i=0; i<noOfPipeEnds; i++){
-                close (pipefds[i]);
-            }
             //getting the arguments of the current command
             char *r = strtok(pipedCommands[currentCommand], "\0");
             r = strtok(r," ");
             char *pipedCommandArgs[10];
+            for (int i=0; i<10; i++){
+                pipedCommandArgs [i] = '\0';
+            }
             int noOfCommandArgs = 0;
             while (r != NULL){
                 pipedCommandArgs[noOfCommandArgs++] = r;
                 r = strtok(NULL, " ");
             }
-            execvp (pipedCommandArgs[0], pipedCommandArgs);
+            //getting input from previous command (if there is one)
+            if(currentCommand!=0){
+                int dupRV = dup2(pipefds[(currentCommand-1)*2], 0);
+                if (dupRV == -1){
+                    perror ("Error: ");
+                    exit (3);
+                }
+            }
+            //checking for input redirection in the first command
+            else{
+                //loop through the command and look for <
+                for (int i=0; i<noOfCommandArgs; i++){
+                    if (strcmp(pipedCommandArgs[i], "<") == 0){
+                        //perform ID if it is present
+                        inputRedirection (pipedCommandArgs[i+1]);
+                    }
+                }
+            }
+            //outputting to next command (if it exists)
+            if (currentCommand!=processCount-1){
+                int dupRV = dup2(pipefds[currentCommand*2+1], 1);
+                if (dupRV == -1){
+                    perror ("Error: ");
+                    exit (3);
+                }
+            }
+            //checking for output redirection in the last command
+            else{
+                //loop through the command and look for > or >>
+                for (int i=0; i<noOfCommandArgs; i++){
+                    if (strcmp(pipedCommandArgs[i], ">") == 0){
+                        int outputFileT = open (pipedCommandArgs[i+1], O_WRONLY | O_TRUNC);
+                        //perform OD if it is present
+                        outputRedirection(outputFileT);
+                    }
+                    else if (strcmp(pipedCommandArgs[i], ">>") == 0){
+                        int outputFileA = open (pipedCommandArgs[i+1], O_WRONLY | O_APPEND);
+                        //perform OD if it is present
+                        outputRedirection(outputFileA);
+                    }
+                }
+            }
+            //closing all the pipe ends
+            for (int i=0; i<noOfPipeEnds; i++){
+                int closeRV = close (pipefds[i]);
+                if (closeRV == -1){
+                    perror ("Error: ");
+                    exit (3);
+                }
+            }
+            int execRV = execvp (pipedCommandArgs[0], pipedCommandArgs);
+            if (execRV == -1){
+                perror ("Error: ");
+                exit (3);
+            }
+            //resetting arguments
+            memset(pipedCommandArgs, '\0', sizeof(pipedCommandArgs));
         }
         else if (pid==-1){
             perror ("Error: ");
@@ -265,10 +276,18 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
     }
     //closing all of the pipes in the parent
     for(int i=0; i<noOfPipeEnds; i++){
-        close(pipefds[i]);
+        int closeRV = close(pipefds[i]);
+        if (closeRV == -1){
+            perror ("Error: ");
+            exit (3);
+        }
     }
     //waiting for all the child processes to complete
     for (int i=0; i<processCount; i++){
-        wait(NULL);
+        int waitRV = wait(NULL);
+        if (waitRV == -1){
+            perror ("Error: ");
+            exit (3);
+        }
     }
 }
