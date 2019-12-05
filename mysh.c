@@ -139,7 +139,6 @@ void printprompt(){
     if(getcwd(cwd, sizeof(cwd)) != NULL){
         printf("%s$ ", cwd);
     }
-    printf("$");
 }
 
 void inputRedirection (char *inputFileName){
