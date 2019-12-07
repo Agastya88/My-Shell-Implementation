@@ -56,7 +56,8 @@ int main(int argc, char *argv[]) {
         }
         //counting the numberOfPipes
         int numberOfPipes = 0;
-        for (int i=0; i<strlen(inputStringCopy);i++){
+        int lengthOfInput = strlen (inputStringCopy);
+        for (int i=0; i<lengthOfInput;i++){
             if (inputString[i] == '|')
                 numberOfPipes++;
         }
@@ -68,40 +69,39 @@ int main(int argc, char *argv[]) {
                 exit (0);
             }
             else if(newProcessPid==0){
-                int rL = noOfArguments;
+                int redirectionLocation = noOfArguments;
                 //stores the location of redirection
                 for (int i=0; i<noOfArguments; i++){
                     //checking if there is a need for input redirection
                     if (strcmp (inputStringArgs [i], "<") == 0){
-                        if (i<rL){
-                            rL = i;
+                        if (i<redirectionLocation){
+                            redirectionLocation = i;
                             inputRedirection (inputStringArgs[i+1]);
                         }
                     }
                     //checking if there is a need for output redirection (truncated)
                     else if (strcmp (inputStringArgs [i], ">") == 0){
-                        int outputFileT = open (inputStringArgs[i+1], O_WRONLY | O_TRUNC);
-                        if (i<rL){
-                            rL = i;
+                        int outputFileT = open (inputStringArgs[i+1], O_CREAT| O_WRONLY | O_TRUNC);
+                        if (i<redirectionLocation){
+                            redirectionLocation = i;
                             outputRedirection (outputFileT);
                         }
                     }
                     //checking if there is a need for output redirection (appended)
                     else if (strcmp (inputStringArgs [i], ">>") == 0){
-                        int outputFileA = open (inputStringArgs[i+1], O_WRONLY | O_APPEND);
-                        if (i<rL){
-                            rL = i;
+                        int outputFileA = open (inputStringArgs[i+1], O_CREAT | O_WRONLY | O_APPEND);
+                        if (i<redirectionLocation){
+                            redirectionLocation = i;
                             outputRedirection (outputFileA);
                         }
                     }
                 }
-                char *commandArgs [rL];
-                for (int i=0; i<rL; i++){
+                char *commandArgs [redirectionLocation];
+                for (int i=0; i<redirectionLocation; i++){
                     commandArgs [i] = inputStringArgs [i];
                 }
-                commandArgs[rL] = 0;
-                int execRV = execvp(commandArgs[0], commandArgs);
-                if (execRV == -1){
+                commandArgs[redirectionLocation] = 0;
+                if (execvp(commandArgs[0], commandArgs) == -1){
                     perror ("Error: ");
                     exit (3);
                 }
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
             //that will give rise to processes
             char *q = strtok(inputStringCopy, "\n");
             q = strtok(q, "|");
-            char *pipedCommands[5];
+            char *pipedCommands[numberOfPipes+1];
             int noOfCommands = 0;
             while (q != NULL){
                 pipedCommands[noOfCommands++] = q;
@@ -142,21 +142,19 @@ void printprompt(){
 }
 
 void inputRedirection (char *inputFileName){
-    int inputFile = open (inputFileName, O_RDONLY);
     //checking for errors during opening
+    int inputFile = open (inputFileName, O_RDONLY);
     if (inputFile==-1){
         perror("Error:");
         exit (2);
     }
     //performing input redirection
-    int dupRV = dup2 (inputFile, 0);
-    if (dupRV == -1){
+    if (dup2 (inputFile, 0) == -1){
         perror ("Error: ");
         exit (2);
     }
     //checking for errors during closing
-    int closeRV = close (inputFile);
-    if (closeRV==-1){
+    if (close (inputFile)==-1){
         perror("Error: ");
         exit (2);
     }
@@ -169,14 +167,12 @@ void outputRedirection (int outputFile){
         exit (2);
     }
     //performing output redirection
-    int dupRV = dup2 (outputFile, 1);
-    if (dupRV == -1){
+    if (dup2 (outputFile, 1) == -1){
         perror ("Error: ");
         exit (2);
     }
     //checking for errors during closing
-    int closeRV = close (outputFile);
-    if (closeRV==-1){
+    if (close (outputFile)==-1){
         perror("Error:");
         exit (2);
     }
@@ -188,8 +184,7 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
     int pipefds[noOfPipeEnds];
     //creating all the necessary pipes in the parent
     for (int i=0; i<numberOfPipes; i++){
-        int pipeRV = pipe (pipefds + i*2);
-        if (pipeRV == -1){
+        if (pipe (pipefds + i*2) == -1){
             perror ("Error: ");
             exit (3);
         }
@@ -212,8 +207,7 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
             }
             //getting input from previous command (if there is one)
             if(currentCommand!=0){
-                int dupRV = dup2(pipefds[(currentCommand-1)*2], 0);
-                if (dupRV == -1){
+                if (dup2(pipefds[(currentCommand-1)*2], 0) == -1){
                     perror ("Error: ");
                     exit (3);
                 }
@@ -230,8 +224,7 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
             }
             //outputting to next command (if it exists)
             if (currentCommand!=processCount-1){
-                int dupRV = dup2(pipefds[currentCommand*2+1], 1);
-                if (dupRV == -1){
+                if (dup2(pipefds[currentCommand*2+1], 1) == -1){
                     perror ("Error: ");
                     exit (3);
                 }
@@ -254,14 +247,12 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
             }
             //closing all the pipe ends
             for (int i=0; i<noOfPipeEnds; i++){
-                int closeRV = close (pipefds[i]);
-                if (closeRV == -1){
+                if (close (pipefds[i]) == -1){
                     perror ("Error: ");
                     exit (3);
                 }
             }
-            int execRV = execvp (pipedCommandArgs[0], pipedCommandArgs);
-            if (execRV == -1){
+            if ( execvp (pipedCommandArgs[0], pipedCommandArgs) == -1){
                 perror ("Error: ");
                 exit (3);
             }
@@ -275,16 +266,14 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
     }
     //closing all of the pipes in the parent
     for(int i=0; i<noOfPipeEnds; i++){
-        int closeRV = close(pipefds[i]);
-        if (closeRV == -1){
+        if (close(pipefds[i]) == -1){
             perror ("Error: ");
             exit (3);
         }
     }
     //waiting for all the child processes to complete
     for (int i=0; i<processCount; i++){
-        int waitRV = wait(NULL);
-        if (waitRV == -1){
+        if (wait(NULL) == -1){
             perror ("Error: ");
             exit (3);
         }
