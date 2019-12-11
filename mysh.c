@@ -33,11 +33,12 @@ int main(int argc, char *argv[]) {
         }
         //creating a copy for later usage (during piping section);
         char *inputStringCopy = strdup(inputString);
+        int lengthOfInput = strlen (inputStringCopy);
         //parsing the string they input into an array of arguments
         char *p = strtok(inputString, "\n");
         //the first token; tokenized using a space
         p = strtok(p, " ");
-        char *inputStringArgs[strlen(inputStringCopy)];
+        char *inputStringArgs[lengthOfInput];
         int noOfArguments = 0;
         while (p != NULL){
             inputStringArgs[noOfArguments++] = p;
@@ -56,7 +57,6 @@ int main(int argc, char *argv[]) {
         }
         //counting the numberOfPipes
         int numberOfPipes = 0;
-        int lengthOfInput = strlen (inputStringCopy);
         for (int i=0; i<lengthOfInput;i++){
             if (inputString[i] == '|')
                 numberOfPipes++;
@@ -196,9 +196,7 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
             char *r = strtok(pipedCommands[currentCommand], "\0");
             r = strtok(r," ");
             char *pipedCommandArgs[10];
-            for (int i=0; i<10; i++){
-                pipedCommandArgs [i] = '\0';
-            }
+            memset(pipedCommandArgs, '\0', sizeof(pipedCommandArgs));
             int noOfCommandArgs = 0;
             while (r != NULL){
                 pipedCommandArgs[noOfCommandArgs++] = r;
@@ -218,6 +216,9 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
                     if (strcmp(pipedCommandArgs[i], "<") == 0){
                         //perform ID if it is present
                         inputRedirection (pipedCommandArgs[i+1]);
+                        for (int j=i; j<noOfCommandArgs; j++){
+                            pipedCommandArgs [j] = '\0';
+                        }
                     }
                 }
             }
@@ -236,11 +237,17 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
                         int outputFileT = open (pipedCommandArgs[i+1], O_WRONLY | O_TRUNC);
                         //perform OD if it is present
                         outputRedirection(outputFileT);
+                        for (int j=i; j<noOfCommandArgs; j++){
+                            pipedCommandArgs [j] = '\0';
+                        }
                     }
                     else if (strcmp(pipedCommandArgs[i], ">>") == 0){
                         int outputFileA = open (pipedCommandArgs[i+1], O_WRONLY | O_APPEND);
                         //perform OD if it is present
                         outputRedirection(outputFileA);
+                        for (int j=i; j<noOfCommandArgs; j++){
+                            pipedCommandArgs [j] = '\0';
+                        }
                     }
                 }
             }
