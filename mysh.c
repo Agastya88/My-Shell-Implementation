@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
         char *p = strtok(inputString, "\n");
         //the first token; tokenized using a space
         p = strtok(p, " ");
-        char *inputStringArgs[10];
+        char *inputStringArgs[strlen(inputStringCopy)];
         int noOfArguments = 0;
         while (p != NULL){
             inputStringArgs[noOfArguments++] = p;
@@ -66,7 +66,6 @@ int main(int argc, char *argv[]) {
             newProcessPid = fork();
             if(newProcessPid==-1){
                 perror("couldn't fork child");
-                exit (0);
             }
             else if(newProcessPid==0){
                 int redirectionLocation = noOfArguments;
@@ -252,7 +251,7 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
                     exit (3);
                 }
             }
-            if ( execvp (pipedCommandArgs[0], pipedCommandArgs) == -1){
+            if (execvp (pipedCommandArgs[0], pipedCommandArgs) == -1){
                 perror ("Error: ");
                 exit (3);
             }
@@ -261,7 +260,6 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
         }
         else if (pid==-1){
             perror ("Error: ");
-            exit (3);
         }
     }
     //closing all of the pipes in the parent
