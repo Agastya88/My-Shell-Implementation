@@ -213,11 +213,13 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
             else{
                 //loop through the command and look for <
                 for (int i=0; i<noOfCommandArgs; i++){
-                    if (strcmp(pipedCommandArgs[i], "<") == 0){
-                        //perform ID if it is present
-                        inputRedirection (pipedCommandArgs[i+1]);
-                        for (int j=i; j<noOfCommandArgs; j++){
-                            pipedCommandArgs [j] = '\0';
+                    if (pipedCommandArgs[i]!=NULL){
+                        if (strcmp(pipedCommandArgs[i], "<") == 0){
+                            //perform ID if it is present
+                            inputRedirection (pipedCommandArgs[i+1]);
+                            for (int j=i; j<noOfCommandArgs; j++){
+                                pipedCommandArgs [j] = NULL;
+                            }
                         }
                     }
                 }
@@ -233,20 +235,22 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
             else{
                 //loop through the command and look for > or >>
                 for (int i=0; i<noOfCommandArgs; i++){
-                    if (strcmp(pipedCommandArgs[i], ">") == 0){
-                        int outputFileT = open (pipedCommandArgs[i+1], O_WRONLY | O_TRUNC);
-                        //perform OD if it is present
-                        outputRedirection(outputFileT);
-                        for (int j=i; j<noOfCommandArgs; j++){
-                            pipedCommandArgs [j] = '\0';
+                    if (pipedCommandArgs[i]!=NULL){
+                        if (strcmp(pipedCommandArgs[i], ">") == 0){
+                            int outputFileT = open (pipedCommandArgs[i+1], O_WRONLY | O_TRUNC);
+                            //perform OD if it is present
+                            outputRedirection(outputFileT);
+                            for (int j=i; j<noOfCommandArgs; j++){
+                                pipedCommandArgs [j] = '\0';
+                            }
                         }
-                    }
-                    else if (strcmp(pipedCommandArgs[i], ">>") == 0){
-                        int outputFileA = open (pipedCommandArgs[i+1], O_WRONLY | O_APPEND);
-                        //perform OD if it is present
-                        outputRedirection(outputFileA);
-                        for (int j=i; j<noOfCommandArgs; j++){
-                            pipedCommandArgs [j] = '\0';
+                        else if (strcmp(pipedCommandArgs[i], ">>") == 0){
+                            int outputFileA = open (pipedCommandArgs[i+1], O_WRONLY | O_APPEND);
+                            //perform OD if it is present
+                            outputRedirection(outputFileA);
+                            for (int j=i; j<noOfCommandArgs; j++){
+                                pipedCommandArgs [j] = '\0';
+                            }
                         }
                     }
                 }
@@ -258,6 +262,7 @@ void multiplePiping (char *pipedCommands[], int numberOfPipes){
                     exit (3);
                 }
             }
+            //execing
             if (execvp (pipedCommandArgs[0], pipedCommandArgs) == -1){
                 perror ("Error: ");
                 exit (3);
