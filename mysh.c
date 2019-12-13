@@ -26,12 +26,10 @@ int main(int argc, char *argv[]) {
         pid_t newProcessPid;
         char uinput[INPUT_MAX];
         char *inputString = fgets(uinput, INPUT_MAX, stdin);
-
         //checking for eof (ctrl-d)
         if (inputString == NULL){
             exit (2);
         }
-
         //copy to use for piping
         char *inputStringCopy = strdup(inputString);
         int lengthOfInput = strlen(inputStringCopy);
@@ -44,7 +42,6 @@ int main(int argc, char *argv[]) {
             inputStringArgs[noOfArguments++] = p;
             p = strtok(NULL, " ");
         }
-
         if (noOfArguments == 0) {
             continue;
         }
@@ -109,7 +106,6 @@ int main(int argc, char *argv[]) {
         //handles the case wherein there is a notion of piping
         else {
             //parsing the input string by pipes to find the commands
-            //that will give rise to processes
             char *q = strtok(inputStringCopy, "\n");
             q = strtok(q, "|");
             char *pipedCommands[numberOfPipes+1];
@@ -134,7 +130,7 @@ void printprompt(){
 void inputRedirection (char *inputFileName) {
     int inputFile = open (inputFileName, O_RDONLY);
     if (inputFile==-1) {
-        perror("Open error:");
+        perror("Error:");
         exit (2);
     }
     //performing input redirection
@@ -143,7 +139,7 @@ void inputRedirection (char *inputFileName) {
         exit (2);
     }
     if (close (inputFile)==-1) {
-        perror("close error: ");
+        perror("Error: ");
         exit (2);
     }
 }
@@ -159,7 +155,7 @@ void outputRedirection (int outputFile) {
         exit (2);
     }
     if (close(outputFile) == -1) {
-        perror("close error:");
+        perror("Error:");
         exit (2);
     }
 }
