@@ -13,7 +13,7 @@
 
 void printprompt();
 void inputRedirection (char *inputFileName);
-void outputRedirection (int outputFile);
+void outputRedirection (char *inputFileName, int type);
 void singlePiping (char *pipedCommands[]);
 void multiplePiping (char *pipedCommands[], int numberOfPipes);
 
@@ -72,15 +72,13 @@ int main(int argc, char *argv[]) {
                     }
                     //truncated ouput redirection
                     else if (strcmp (inputStringArgs [i], ">") == 0){
-                        int outputFileT = open (inputStringArgs[i+1], O_CREAT| O_WRONLY | O_TRUNC, 0644);
                         redirectionLocation = i;
-                        outputRedirection(outputFileT);
+                        outputRedirection(inputStringArgs[i+1], 1);
                     }
                     //appended output redirection
                     else if (strcmp (inputStringArgs [i], ">>") == 0){
-                        int outputFileA = open (inputStringArgs[i+1], O_CREAT | O_WRONLY | O_APPEND, 0644);
                         redirectionLocation = i;
-                        outputRedirection (outputFileA);
+                        outputRedirection (inputStringArgs[i+1], 2);
                     }
                     i++;
                 }
@@ -144,7 +142,14 @@ void inputRedirection (char *inputFileName) {
     }
 }
 
-void outputRedirection (int outputFile) {
+void outputRedirection (char *inputFileName, int type) {
+    int outputFile = -1;
+    if (type==1){
+        outputFile = open (inputFileName, O_CREAT| O_WRONLY | O_TRUNC, 0644);
+    }
+    else if (type==2){
+        outputFile = open (inputFileName, O_CREAT | O_WRONLY | O_APPEND, 0644);
+    }
     if (outputFile == -1) {
         perror("Error:");
         exit (2);
@@ -217,17 +222,19 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
                 for (int i=0; i<noOfCommandArgs; i++){
                     if (pipedCommandArgs[i] != NULL){
                         int redirecting = 0;
-                        int outputFile;
+                        int type=0;
                         if (strcmp(pipedCommandArgs[i], ">") == 0){
                             redirecting = 1;
-                            outputFile = open (pipedCommandArgs[i+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+                            outputRedirection(pipedCommandArgs[i+1], 1);
+                            type = 1;
                         }
                         else if (strcmp(pipedCommandArgs[i], ">>") == 0){
                             redirecting = 1;
-                            outputFile = open (pipedCommandArgs[i+1], O_CREAT | O_WRONLY | O_APPEND, 0644);
+                            outputRedirection(pipedCommandArgs[i+1], 2);
+                            type = 2;
                         }
                         if (redirecting) {
-                            outputRedirection(outputFile);
+                            outputRedirection(pipedCommandArgs[i+1], type);
                             for (int j=i; j<noOfCommandArgs; j++){
                                 pipedCommandArgs [j] = '\0';
                             }
