@@ -16,12 +16,15 @@ void inputRedirection (char *inputFileName);
 void outputRedirection (char *inputFileName, int type);
 void singlePiping (char *pipedCommands[]);
 void multiplePiping (char *pipedCommands[], int numberOfPipes);
+void runCommandWithRedirections (int noOfArguments, char *inputStringArgs[]);
+
 
 int main(int argc, char *argv[]) {
     pid_t shellpid;
     shellpid = getpid();
     printf ("Shell ID: %d \n", shellpid);
     while(1) {
+        //setting up interface for user input
         printprompt();
         pid_t newProcessPid;
         char uinput[INPUT_MAX];
@@ -42,12 +45,15 @@ int main(int argc, char *argv[]) {
             inputStringArgs[noOfArguments++] = p;
             p = strtok(NULL, " ");
         }
+        //checking for empty commands
         if (noOfArguments == 0) {
             continue;
         }
+        //checking for exit
         if (strcmp(inputStringArgs[0], "exit") == 0) {
             exit(2);
         }
+        //counting number of pipes
         int numberOfPipes = 0;
         for (int i=0; i<lengthOfInput;i++) {
             if (inputString[i] == '|') {
@@ -61,36 +67,7 @@ int main(int argc, char *argv[]) {
                 perror("fork child failed");
             }
             else if(newProcessPid == 0) {
-                int redirectionLocation = noOfArguments;
-                //stores the location of redirection
-                int i = 0;
-                while ((i < noOfArguments) && (i<redirectionLocation)) {
-                    //input redirection
-                    if (strcmp (inputStringArgs [i], "<") == 0){
-                        redirectionLocation = i;
-                        inputRedirection (inputStringArgs[i+1]);
-                    }
-                    //truncated ouput redirection
-                    else if (strcmp (inputStringArgs [i], ">") == 0){
-                        redirectionLocation = i;
-                        outputRedirection(inputStringArgs[i+1], 1);
-                    }
-                    //appended output redirection
-                    else if (strcmp (inputStringArgs [i], ">>") == 0){
-                        redirectionLocation = i;
-                        outputRedirection (inputStringArgs[i+1], 2);
-                    }
-                    i++;
-                }
-                char *commandArgs [redirectionLocation];
-                for (int i=0; i<redirectionLocation; i++) {
-                    commandArgs [i] = inputStringArgs [i];
-                }
-                commandArgs[redirectionLocation] = 0;
-                if (execvp(commandArgs[0], commandArgs) == -1) {
-                    perror ("Error: ");
-                    exit (3);
-                }
+                runCommandWithRedirections (noOfArguments, inputStringArgs);
             }
             else {
                 wait (NULL);
@@ -112,6 +89,7 @@ int main(int argc, char *argv[]) {
                 pipedCommands[noOfCommands++] = q;
                 q = strtok(NULL, "|");
             }
+            //performing multiple piping
             multiplePiping (pipedCommands, numberOfPipes);
             free (inputStringCopy);
         }
@@ -274,5 +252,36 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
             perror ("Error: ");
             exit (3);
         }
+    }
+}
+
+void runCommandWithRedirections (int noOfArguments, char *inputStringArgs[]){
+    int redirectionLocation = noOfArguments;
+    //stores the location of redirection
+    for (int i=0; i < noOfArguments && i<redirectionLocation; i++) {
+        //input redirection
+        if (strcmp (inputStringArgs [i], "<") == 0){
+            redirectionLocation = i;
+            inputRedirection (inputStringArgs[i+1]);
+        }
+        //truncated ouput redirection
+        else if (strcmp (inputStringArgs [i], ">") == 0){
+            redirectionLocation = i;
+            outputRedirection(inputStringArgs[i+1], 1);
+        }
+        //appended output redirection
+        else if (strcmp (inputStringArgs [i], ">>") == 0){
+            redirectionLocation = i;
+            outputRedirection (inputStringArgs[i+1], 2);
+        }
+    }
+    char *commandArgs [redirectionLocation];
+    for (int i=0; i<redirectionLocation; i++) {
+        commandArgs [i] = inputStringArgs [i];
+    }
+    commandArgs[redirectionLocation] = 0;
+    if (execvp(commandArgs[0], commandArgs) == -1) {
+        perror ("Error: ");
+        exit (3);
     }
 }
