@@ -75,13 +75,13 @@ int main(int argc, char *argv[]) {
                     }
                     //truncated ouput redirection
                     else if (strcmp (inputStringArgs [i], ">") == 0){
-                        int outputFileT = open (inputStringArgs[i+1], O_CREAT| O_WRONLY | O_TRUNC, 0666);
+                        int outputFileT = open (inputStringArgs[i+1], O_CREAT| O_WRONLY | O_TRUNC, 0644);
                         redirectionLocation = i;
                         outputRedirection(outputFileT);
                     }
                     //appended output redirection
                     else if (strcmp (inputStringArgs [i], ">>") == 0){
-                        int outputFileA = open (inputStringArgs[i+1], O_CREAT | O_WRONLY | O_APPEND, 0666);
+                        int outputFileA = open (inputStringArgs[i+1], O_CREAT | O_WRONLY | O_APPEND, 0644);
                         redirectionLocation = i;
                         outputRedirection (outputFileA);
                     }
@@ -134,7 +134,7 @@ void printprompt(){
 void inputRedirection (char *inputFileName) {
     int inputFile = open (inputFileName, O_RDONLY);
     if (inputFile==-1) {
-        perror("open error:");
+        perror("Open error:");
         exit (2);
     }
     //performing input redirection
@@ -150,7 +150,7 @@ void inputRedirection (char *inputFileName) {
 
 void outputRedirection (int outputFile) {
     if (outputFile == -1) {
-        perror("open error:");
+        perror("Error:");
         exit (2);
     }
     //performing output redirection
@@ -224,11 +224,11 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
                         int outputFile;
                         if (strcmp(pipedCommandArgs[i], ">") == 0){
                             redirecting = 1;
-                            outputFile = open (pipedCommandArgs[i+1], O_WRONLY | O_TRUNC);
+                            outputFile = open (pipedCommandArgs[i+1], O_CREAT | O_WRONLY | O_TRUNC, 0644);
                         }
                         else if (strcmp(pipedCommandArgs[i], ">>") == 0){
                             redirecting = 1;
-                            outputFile = open (pipedCommandArgs[i+1], O_WRONLY | O_APPEND);
+                            outputFile = open (pipedCommandArgs[i+1], O_CREAT | O_WRONLY | O_APPEND, 0644);
                         }
                         if (redirecting) {
                             outputRedirection(outputFile);
