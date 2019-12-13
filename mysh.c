@@ -17,7 +17,7 @@ void outputRedirection (char *inputFileName, int type);
 void singlePiping (char *pipedCommands[]);
 void multiplePiping (char *pipedCommands[], int numberOfPipes);
 void runCommandWithRedirections (int noOfArguments, char *inputStringArgs[]);
-
+void outputRedirectionInFinalPipe (int noOfCommandArgs, char *pipedCommandArgs[]);
 
 int main(int argc, char *argv[]) {
     pid_t shellpid;
@@ -197,28 +197,7 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
             //checking for output redirection in the last command
             else {
                 //loop through the command and look for > or >>
-                for (int i=0; i<noOfCommandArgs; i++){
-                    if (pipedCommandArgs[i] != NULL){
-                        int redirecting = 0;
-                        int type=0;
-                        if (strcmp(pipedCommandArgs[i], ">") == 0){
-                            redirecting = 1;
-                            outputRedirection(pipedCommandArgs[i+1], 1);
-                            type = 1;
-                        }
-                        else if (strcmp(pipedCommandArgs[i], ">>") == 0){
-                            redirecting = 1;
-                            outputRedirection(pipedCommandArgs[i+1], 2);
-                            type = 2;
-                        }
-                        if (redirecting) {
-                            outputRedirection(pipedCommandArgs[i+1], type);
-                            for (int j=i; j<noOfCommandArgs; j++){
-                                pipedCommandArgs [j] = '\0';
-                            }
-                        }
-                    }
-                }
+                outputRedirectionInFinalPipe (noOfCommandArgs, pipedCommandArgs);
             }
             //closing all the pipe ends
             for (int i=0; i<noOfPipeEnds; i++) {
@@ -283,5 +262,30 @@ void runCommandWithRedirections (int noOfArguments, char *inputStringArgs[]){
     if (execvp(commandArgs[0], commandArgs) == -1) {
         perror ("Error: ");
         exit (3);
+    }
+}
+
+void outputRedirectionInFinalPipe (int noOfCommandArgs, char *pipedCommandArgs[]) {
+    for (int i=0; i<noOfCommandArgs; i++){
+        if (pipedCommandArgs[i] != NULL){
+            int redirecting = 0;
+            int type=0;
+            if (strcmp(pipedCommandArgs[i], ">") == 0){
+                redirecting = 1;
+                outputRedirection(pipedCommandArgs[i+1], 1);
+                type = 1;
+            }
+            else if (strcmp(pipedCommandArgs[i], ">>") == 0){
+                redirecting = 1;
+                outputRedirection(pipedCommandArgs[i+1], 2);
+                type = 2;
+            }
+            if (redirecting) {
+                outputRedirection(pipedCommandArgs[i+1], type);
+                for (int j=i; j<noOfCommandArgs; j++){
+                    pipedCommandArgs [j] = '\0';
+                }
+            }
+        }
     }
 }
