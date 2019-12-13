@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
         if (numberOfPipes == 0) {
             newProcessPid = fork();
             if(newProcessPid==-1) {
-                perror("fork child failed");
+                perror("Fork Error: ");
             }
             else if(newProcessPid == 0) {
                 runCommandWithRedirections (noOfArguments, inputStringArgs);
@@ -106,16 +106,16 @@ void printprompt(){
 void inputRedirection (char *inputFileName) {
     int inputFile = open (inputFileName, O_RDONLY);
     if (inputFile==-1) {
-        perror("Error:");
+        perror("Open Error:");
         exit (2);
     }
     //performing input redirection
     if (dup2 (inputFile, 0) == -1) {
-        perror ("Error: ");
+        perror ("Dup2 Error: ");
         exit (2);
     }
     if (close (inputFile)==-1) {
-        perror("Error: ");
+        perror("Close Error: ");
         exit (2);
     }
 }
@@ -129,16 +129,16 @@ void outputRedirection (char *inputFileName, int type) {
         outputFile = open (inputFileName, O_CREAT | O_WRONLY | O_APPEND, 0644);
     }
     if (outputFile == -1) {
-        perror("Error:");
+        perror("Open Error:");
         exit (2);
     }
     //performing output redirection
     if (dup2(outputFile, 1) == -1) {
-        perror ("Error: ");
+        perror ("Dup2 Error: ");
         exit (2);
     }
     if (close(outputFile) == -1) {
-        perror("Error:");
+        perror("Close Error:");
         exit (2);
     }
 }
@@ -150,14 +150,17 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
     //creating all the necessary pipes in the parent
     for (int i=0; i < numberOfPipes; i++) {
         if (pipe(pipefds + i*2) == -1) {
-            perror ("Error: ");
+            perror ("Pipe Error: ");
             exit (3);
         }
     }
     //dup-ing and executing for each command
     for (int currentCommand = 0; currentCommand<processCount; currentCommand++) {
         int pid = fork();
-        if (pid == 0) {
+        if (pid == -1) {
+            perror ("Fork Error: ");
+        }
+        else {
             //getting the arguments of the current command
             char *r = strtok(pipedCommands[currentCommand], "\0");
             r = strtok(r," ");
@@ -171,7 +174,7 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
             //getting input from previous command (if there is one)
             if(currentCommand!=0) {
                 if (dup2(pipefds[(currentCommand-1)*2], 0) == -1) {
-                    perror ("Error: ");
+                    perror ("Dup2 Error: ");
                     exit (3);
                 }
             }
@@ -202,33 +205,30 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
             //closing all the pipe ends
             for (int i=0; i<noOfPipeEnds; i++) {
                 if (close (pipefds[i]) == -1) {
-                    perror ("Error: ");
+                    perror ("Close Error: ");
                     exit (3);
                 }
             }
             //execing
             if (execvp (pipedCommandArgs[0], pipedCommandArgs) == -1) {
-                perror ("Error: ");
+                perror ("Exec Error: ");
                 exit (3);
             }
             //resetting arguments
             memset(pipedCommandArgs, '\0', sizeof(pipedCommandArgs));
         }
-        else if (pid == -1) {
-            perror ("Error: ");
-        }
     }
     //closing all of the pipes in the parent
     for(int i=0; i<noOfPipeEnds; i++) {
         if (close(pipefds[i]) == -1) {
-            perror ("Error: ");
+            perror ("Close Error: ");
             exit (3);
         }
     }
     //waiting for all the child processes to complete
     for (int i=0; i<processCount; i++) {
         if (wait(NULL) == -1) {
-            perror ("Error: ");
+            perror ("Wait Error: ");
             exit (3);
         }
     }
@@ -260,7 +260,7 @@ void runCommandWithRedirections (int noOfArguments, char *inputStringArgs[]){
     }
     commandArgs[redirectionLocation] = 0;
     if (execvp(commandArgs[0], commandArgs) == -1) {
-        perror ("Error: ");
+        perror ("Exec Error: ");
         exit (3);
     }
 }
