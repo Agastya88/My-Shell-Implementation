@@ -157,10 +157,7 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
     //dup-ing and executing for each command
     for (int currentCommand = 0; currentCommand<processCount; currentCommand++) {
         int pid = fork();
-        if (pid == -1) {
-            perror ("Fork Error: ");
-        }
-        else {
+        if (pid == 0) {
             //getting the arguments of the current command
             char *r = strtok(pipedCommands[currentCommand], "\0");
             r = strtok(r," ");
@@ -216,6 +213,9 @@ void multiplePiping(char *pipedCommands[], int numberOfPipes) {
             }
             //resetting arguments
             memset(pipedCommandArgs, '\0', sizeof(pipedCommandArgs));
+        }
+        else if (pid == -1) {
+            perror ("Fork Error: ");
         }
     }
     //closing all of the pipes in the parent
