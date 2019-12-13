@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
                     }
                     //checking if there is a need for output redirection (truncated)
                     else if (strcmp (inputStringArgs [i], ">") == 0){
-                        int outputFileT = open (inputStringArgs[i+1], O_CREAT| O_WRONLY | O_TRUNC);
+                        int outputFileT = open (inputStringArgs[i+1], O_CREAT| O_WRONLY | O_TRUNC, 0666);
                         if (i<redirectionLocation){
                             redirectionLocation = i;
                             outputRedirection (outputFileT);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
                     }
                     //checking if there is a need for output redirection (appended)
                     else if (strcmp (inputStringArgs [i], ">>") == 0){
-                        int outputFileA = open (inputStringArgs[i+1], O_CREAT | O_WRONLY | O_APPEND);
+                        int outputFileA = open (inputStringArgs[i+1], O_CREAT | O_WRONLY | O_APPEND, 0666);
                         if (i<redirectionLocation){
                             redirectionLocation = i;
                             outputRedirection (outputFileA);
