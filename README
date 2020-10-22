@@ -1,6 +1,8 @@
 Authors:
-Sammy Van Cleve
 Agastya Ahluwalia
+Sammy Van Cleve
+
+This program is our implementation of a shell.
 
 Implemented:
 - runs basic programs
@@ -10,6 +12,3 @@ Implemented:
 - single piping
 - multiple piping
 - piping alongside redirections
-
-Remaining Tasks:
-- none according to me
