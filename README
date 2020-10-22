@@ -3,6 +3,8 @@ Agastya Ahluwalia
 Sammy Van Cleve
 
 This program is our implementation of a shell.
+The main code can be found in mysh.c
+Testing code can be found in files named accordingly
 
 Implemented:
 - runs basic programs
